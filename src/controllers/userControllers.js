@@ -3,25 +3,35 @@ import joi from 'joi'
 
 export async function registersGet(req,res){
     try{
-    const name=res.locals.name
-    const registros=await db.collection("registros").find({name})
-    if(!registros) return res.send(false)
-    res.send(registros.toArray())
+    const {name}=res.locals
+    const registros=await db.collection("registros").find({name}).toArray()
+    let total=0
+    registros.map((e)=>{
+        if(e.type==='entry'){
+            total+=Number(e.price.replace(",","."))
+        }
+        if(e.type==='withdraw'){
+            total-=Number(e.price.replace(",","."))
+        }
+    })
+    res.send({entradas:registros,total:total.toFixed(2)})
     } catch(e){
         res.status(500).send("Erro com o servidor")
     }
 }
 
 export async function registersPost(req,res){
+
     try{
         const schemaRegister=joi.object({
-            price:joi.string().required(),
+            price:joi.number().required(),
             description:joi.string().required(),
+            date:joi.string().required(),
             type:joi.string().valid("entry","withdraw").required()
         })
         const validation=schemaRegister.validate(req.body)
         if(validation.error) return res.sendStatus(422)
-        const name=res.locals.name
+        const {name}=res.locals
         const {price,description,date,type}=req.body
         await db.collection("registros").insertOne({name,price,description,date,type})
         res.sendStatus(201)
