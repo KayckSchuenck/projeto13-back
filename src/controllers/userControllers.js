@@ -1,5 +1,6 @@
 import db from "../db.js"
 import joi from 'joi'
+import { ObjectId } from "mongodb"
 
 export async function registersGet(req,res){
     try{
@@ -21,7 +22,6 @@ export async function registersGet(req,res){
 }
 
 export async function registersPost(req,res){
-
     try{
         const schemaRegister=joi.object({
             price:joi.number().required(),
@@ -35,6 +35,17 @@ export async function registersPost(req,res){
         const {price,description,date,type}=req.body
         await db.collection("registros").insertOne({name,price,description,date,type})
         res.sendStatus(201)
+    } catch(e){
+        res.status(500).send("Erro com o servidor")
+    }
+}
+
+export async function registersDelete(req,res){
+    try{
+        const {id}=req.headers
+        const newId=id.replace('ObjectId("','').replace('")','')
+        await db.collection("registros").deleteOne({_id:new ObjectId(newId)})
+        res.sendStatus(200)
     } catch(e){
         res.status(500).send("Erro com o servidor")
     }
